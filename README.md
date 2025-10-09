@@ -101,6 +101,6 @@ After a successful run you will have:
 
 This project is distributed under the terms of the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). © 2025 John R.B. Palmer.
 
-````
+
 For deeper context explore the READMEs inside `pipeline_toolkit/`, `qualtrics_tools/`, `decryption_tools/`, and `structure_tools/`.
 
