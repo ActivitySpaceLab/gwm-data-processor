@@ -1,0 +1,17 @@
+# macOS cruft
+.DS_Store
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Pipeline outputs
+/data/
+
+*.zip
+
+# Local secrets and environments
+pipeline_toolkit/.env
+pipeline_toolkit/secrets/
+pipeline_toolkit/venv/
+pipeline_toolkit/last_run_summary.json

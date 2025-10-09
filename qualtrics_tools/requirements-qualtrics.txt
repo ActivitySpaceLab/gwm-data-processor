@@ -1,0 +1,14 @@
+# Requirements for Qualtrics Data Download Script
+# Install with: pip install -r requirements-qualtrics.txt
+
+# HTTP client for API requests
+requests>=2.31.0
+
+# Data manipulation and analysis
+pandas>=2.0.0
+
+# Date/time handling (included in Python standard library)
+# pathlib (included in Python standard library)
+# json (included in Python standard library)
+# zipfile (included in Python standard library)
+# argparse (included in Python standard library)
