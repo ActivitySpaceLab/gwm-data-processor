@@ -96,11 +96,10 @@ After a successful run you will have:
 | Decryption fails | Confirm `PRIVATE_KEY_PASSWORD` and that `private_key.pem` matches incoming data. |
 | No CSV output | Confirm `data/decrypted/` contains `*_decrypted_responses.csv`; rerun structuring step. |
 
+For deeper context explore the READMEs inside `pipeline_toolkit/`, `qualtrics_tools/`, `decryption_tools/`, and `structure_tools/`.
 
 ## 📄 License
 
 This project is distributed under the terms of the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). © 2025 John R.B. Palmer.
 
-
-For deeper context explore the READMEs inside `pipeline_toolkit/`, `qualtrics_tools/`, `decryption_tools/`, and `structure_tools/`.
 
