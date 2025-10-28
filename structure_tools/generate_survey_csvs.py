@@ -124,7 +124,13 @@ class SurveyCSVCreator:
         for idx, row in df.iterrows():
             try:
                 # Determine survey type
-                survey_type = row.get('decrypted_type', '').lower()
+                raw_type = row.get('decrypted_type', '')
+                if isinstance(raw_type, str):
+                    survey_type = raw_type.lower()
+                elif pd.isna(raw_type) or raw_type is None:
+                    survey_type = ''
+                else:
+                    survey_type = str(raw_type).lower()
                 
                 if 'consent' in survey_type:
                     self._process_consent_response(row)
