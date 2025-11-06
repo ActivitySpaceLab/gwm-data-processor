@@ -19,20 +19,43 @@ set -o allexport
 source "${ENV_FILE}"
 set +o allexport
 
+# Choose python interpreter
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="python"
+else
+  echo "Error: python executable not found on PATH." >&2
+  exit 1
+fi
+
 # Create virtual environment if needed
 if [[ ! -d "${VENV_DIR}" ]]; then
   echo "Creating Python virtual environment..."
-  python3 -m venv "${VENV_DIR}"
+  "${PYTHON_BIN}" -m venv "${VENV_DIR}"
+fi
+
+# Determine activation/paths for POSIX vs Windows layouts
+if [[ -d "${VENV_DIR}/bin" ]]; then
+  ACTIVATE_SCRIPT="${VENV_DIR}/bin/activate"
+  VENV_PYTHON="${VENV_DIR}/bin/python"
+elif [[ -d "${VENV_DIR}/Scripts" ]]; then
+  ACTIVATE_SCRIPT="${VENV_DIR}/Scripts/activate"
+  VENV_PYTHON="${VENV_DIR}/Scripts/python.exe"
+else
+  echo "Error: Could not locate virtualenv activation script in ${VENV_DIR}." >&2
+  exit 1
 fi
 
 # Activate virtual environment
-source "${VENV_DIR}/bin/activate"
+# shellcheck disable=SC1090
+source "${ACTIVATE_SCRIPT}"
 
 # Install dependencies if first run or requirements changed
-pip install --upgrade pip >/dev/null
-pip install -r "${REQUIREMENTS_FILE}"
+"${VENV_PYTHON}" -m pip install --upgrade pip >/dev/null
+"${VENV_PYTHON}" -m pip install -r "${REQUIREMENTS_FILE}"
 
 cd "${SCRIPT_DIR}"
 
-python3 "${RUNNER}" "$@"
+"${VENV_PYTHON}" "${RUNNER}" "$@"
 
