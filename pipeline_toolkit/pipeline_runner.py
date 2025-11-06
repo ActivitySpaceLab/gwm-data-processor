@@ -53,6 +53,28 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 
+def _ensure_utf8_output() -> None:
+    """Align stdout/stderr encoding so Windows consoles accept UTF-8 output."""
+
+    if os.name == "nt":
+        try:
+            import ctypes  # type: ignore
+
+            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+            ctypes.windll.kernel32.SetConsoleCP(65001)
+        except Exception:  # pragma: no cover - best-effort only
+            pass
+
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+_ensure_utf8_output()
+
+
 @dataclass
 class StepResult:
     """Outcome record for a pipeline stage."""
@@ -242,12 +264,15 @@ class PipelineRunner:
         env["PIPELINE_RUN_TIMESTAMP"] = self.run_timestamp
         env["PIPELINE_OUTPUT_DIR"] = str(self.run_dirs["structured"])
         env["PIPELINE_REPORT_DIR"] = str(self.run_dirs["reports"])
+        env.setdefault("PYTHONUTF8", "1")
 
         result = subprocess.run(
             cmd,
             cwd=str(self.project_root),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             env=env,
         )
 

@@ -36,6 +36,7 @@ Examples:
 import argparse
 import json
 import os
+import sys
 import time
 import zipfile
 from datetime import datetime, timedelta
@@ -43,6 +44,28 @@ from typing import Dict, List, Optional
 import requests
 import pandas as pd
 from pathlib import Path
+
+
+def _ensure_utf8_output() -> None:
+    """Force stdout/stderr to UTF-8 so Windows consoles avoid charmap errors."""
+
+    if os.name == "nt":
+        try:
+            import ctypes  # type: ignore
+
+            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+            ctypes.windll.kernel32.SetConsoleCP(65001)
+        except Exception:
+            pass
+
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+_ensure_utf8_output()
 
 class QualtricsDataDownloader:
     """Download survey response data from Qualtrics API"""
