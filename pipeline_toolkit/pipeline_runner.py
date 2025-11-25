@@ -100,6 +100,7 @@ class PipelineRunner:
             "decryption": self.project_root / "decryption_tools",
             "structure": self.project_root / "structure_tools",
         }
+        self.buffer_download_script = self.tools_dir["qualtrics"] / "download_buffered_surveys.py"
         self.pipeline_dir = Path(__file__).resolve().parent
         self.data_root = self.project_root / "data"
         self.output_dirs = {
@@ -210,7 +211,51 @@ class PipelineRunner:
         elif all_data:
             cmd.append("--all")
 
-        return self._run_command("download", cmd)
+        success = self._run_command("download", cmd)
+
+        if not success:
+            return False
+
+        bucket = os.environ.get("BUFFERED_S3_BUCKET")
+        if not bucket or not self.buffer_download_script.exists():
+            return success
+
+        buffered_cmd = [
+            sys.executable,
+            str(self.buffer_download_script),
+            "--bucket",
+            bucket,
+            "--output-dir",
+            str(self.run_dirs["raw"]),
+            "--csv-name",
+            os.environ.get("BUFFERED_S3_CSV_NAME", "buffered_survey_payloads.csv"),
+            "--skip-decrypt",
+        ]
+
+        prefix = os.environ.get("BUFFERED_S3_PREFIX")
+        if prefix:
+            buffered_cmd += ["--prefix", prefix]
+
+        profile = os.environ.get("BUFFERED_S3_PROFILE")
+        if profile:
+            buffered_cmd += ["--profile", profile]
+
+        region = os.environ.get("BUFFERED_S3_REGION")
+        if region:
+            buffered_cmd += ["--region", region]
+
+        max_items = os.environ.get("BUFFERED_S3_MAX")
+        if max_items:
+            buffered_cmd += ["--max", max_items]
+
+        if os.environ.get("BUFFERED_S3_WRITE_RAW", "0").lower() in {"1", "true", "yes"}:
+            buffered_cmd.append("--write-raw")
+
+        if os.environ.get("BUFFERED_S3_WRITE_JSON", "0").lower() in {"1", "true", "yes"}:
+            buffered_cmd.append("--write-json")
+
+        print("   • Detected BUFFERED_S3_BUCKET; downloading buffered payloads...")
+        return success and self._run_command("buffered", buffered_cmd)
 
     def _decrypt_step(self) -> bool:
         print("\n🔓 Step 2/4 – Decrypting survey payloads...")

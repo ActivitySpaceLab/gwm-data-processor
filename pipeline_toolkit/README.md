@@ -29,6 +29,23 @@ This folder bundles everything a colleague needs to run the Gauteng Wellbeing Ma
 
 Images embedded in legacy survey payloads are ignored during structuring to keep the output tidy. If you ever need to recover them for forensic purposes, run `generate_survey_csvs.py` manually with `--download-images` after the pipeline finishes.
 
+### Optional: ingest buffered S3 payloads
+
+If the fallback proxy has stored encrypted submissions in S3, the pipeline can
+fold them into the same run automatically. Configure the following environment
+variables (typically in `.env`) before launching:
+
+- `BUFFERED_S3_BUCKET` – required to enable the step; identifies the bucket.
+- `BUFFERED_S3_PREFIX` – override the default `buffered-surveys/` prefix.
+- `BUFFERED_S3_PROFILE` / `BUFFERED_S3_REGION` – optional AWS config.
+- `BUFFERED_S3_MAX` – limit how many buffered objects are processed (useful for tests).
+- `BUFFERED_S3_WRITE_RAW` / `BUFFERED_S3_WRITE_JSON` – set to `1`/`true` to keep per-object artefacts for debugging.
+
+The downloader writes `buffered_survey_payloads.csv` into the run's `data/raw/`
+directory. The decryption and structuring stages deduplicate payloads across
+both Qualtrics and S3 sources using a stable hash of the encrypted data, so
+running the fallback step does not introduce duplicate responses.
+
 ## Output folders
 
 Every pipeline execution is stored separately to avoid clobbering earlier runs:

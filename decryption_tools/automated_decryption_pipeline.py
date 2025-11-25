@@ -47,6 +47,7 @@ import argparse
 import json
 import base64
 import csv
+import hashlib
 import os
 import sys
 from datetime import datetime
@@ -335,6 +336,12 @@ class AutomatedDecryptionPipeline:
                 
                 # Process encrypted data if present
                 encrypted_data_column = survey_config.get('encrypted_data_column', 'encrypted_data')
+                encrypted_data = response_data.get(encrypted_data_column)
+                if isinstance(encrypted_data, str) and encrypted_data:
+                    decrypted_response.setdefault(
+                        'encrypted_data_hash', hashlib.sha256(encrypted_data.encode('utf-8')).hexdigest()
+                    )
+
                 if encrypted_data_column in response_data and response_data[encrypted_data_column]:
                     encrypted_data = response_data[encrypted_data_column]
                     

@@ -48,7 +48,7 @@ import requests
 import base64
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Set
 import pandas as pd
 from urllib.parse import urlparse
 import hashlib
@@ -82,8 +82,10 @@ class SurveyCSVCreator:
             'biweekly_responses': 0,
             'location_points': 0,
             'images_processed': 0,
+            'duplicates_skipped': 0,
             'errors': []
         }
+        self._seen_hashes: Set[str] = set()
     
     def process_all_files(self) -> bool:
         """Process all decrypted CSV files"""
@@ -123,6 +125,21 @@ class SurveyCSVCreator:
         # Process each response
         for idx, row in df.iterrows():
             try:
+                dedupe_key = None
+                hash_candidate = row.get('encrypted_data_hash')
+                if isinstance(hash_candidate, str) and hash_candidate:
+                    dedupe_key = f"hash::{hash_candidate}"
+                else:
+                    response_id = row.get('ResponseId', '')
+                    if isinstance(response_id, str) and response_id:
+                        dedupe_key = f"response::{response_id}"
+
+                if dedupe_key and dedupe_key in self._seen_hashes:
+                    self.stats['duplicates_skipped'] += 1
+                    continue
+                if dedupe_key:
+                    self._seen_hashes.add(dedupe_key)
+
                 # Determine survey type
                 raw_type = row.get('decrypted_type', '')
                 if isinstance(raw_type, str):
@@ -633,6 +650,7 @@ class SurveyCSVCreator:
         print(f"Biweekly surveys: {self.stats['biweekly_responses']}")
         print(f"Location points: {self.stats['location_points']}")
         print(f"Images processed: {self.stats['images_processed']}")
+        print(f"Duplicate responses skipped: {self.stats['duplicates_skipped']}")
         
         if self.stats['errors']:
             print(f"\n⚠️ Errors encountered: {len(self.stats['errors'])}")
