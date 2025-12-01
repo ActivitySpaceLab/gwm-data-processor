@@ -29,6 +29,16 @@ This folder bundles everything a colleague needs to run the Gauteng Wellbeing Ma
 
 Images embedded in legacy survey payloads are ignored during structuring to keep the output tidy. If you ever need to recover them for forensic purposes, run `generate_survey_csvs.py` manually with `--download-images` after the pipeline finishes.
 
+### Biweekly compliance summary
+
+After the structuring step the pipeline now produces
+`biweekly_period_summary.csv` and `biweekly_period_summary.md` inside each
+run's `data/structured/<timestamp>/` folder. These artefacts count, for every
+participant code, how many of the 12 biweekly periods (starting on their
+consent date) contain at least one qualifying submission. The script also keeps
+an always-up-to-date copy at `data/structured/biweekly_period_summary_latest.csv`
+for quick reference between runs.
+
 ### Optional: ingest buffered S3 payloads
 
 If the fallback proxy has stored encrypted submissions in S3, the pipeline can
@@ -54,5 +64,6 @@ Every pipeline execution is stored separately to avoid clobbering earlier runs:
 - `data/decrypted/<run-timestamp>/`
 - `data/structured/<run-timestamp>/`
 - `data/reports/<run-timestamp>/`
+- `data/structured/biweekly_period_summary_latest.csv`
 
 The toolkit also maintains a `latest/` symlink (or a `LATEST_RUN.txt` pointer on systems without symlink support) inside each folder so collaborators can always find the most recent results quickly.

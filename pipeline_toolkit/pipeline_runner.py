@@ -7,8 +7,10 @@ Qualtrics survey data into ready-to-analyse CSV tables and reports:
 1. Download the latest survey responses from Qualtrics.
 2. Decrypt the downloaded payloads using the team private key.
 3. Structure the decrypted content into `biweekly_survey.csv`,
-   `consent.csv`, `initial_survey.csv`, and `location_data.csv`.
-4. Generate per-participant HTML reports, including location maps.
+    `consent.csv`, `initial_survey.csv`, and `location_data.csv`.
+4. Evaluate, per participant, how many of the 12 scheduled biweekly periods
+    have at least one qualifying submission (for compensation tracking).
+5. Generate per-participant HTML reports, including location maps.
 
 All heavy lifting remains inside the specialised tool directories
 (`qualtrics_tools`, `decryption_tools`, `structure_tools`).  The runner simply
@@ -30,7 +32,8 @@ Environment variables (loaded automatically by ``run_pipeline.sh``):
 Outputs (created under ``data/``):
     data/raw/              CSV export downloaded from Qualtrics.
     data/decrypted/        Intermediate decrypted CSV files.
-    data/structured/       Final CSVs + processing_report.json summary.
+    data/structured/       Final CSVs + processing_report.json summary +
+                          biweekly_period_summary.{csv,md}
     data/reports/          Participant HTML reports and embedded maps.
     pipeline_toolkit/last_run_summary.json   Metadata about the latest run.
 
@@ -192,13 +195,14 @@ class PipelineRunner:
         success &= self._download_step(days=days, all_data=all_data)
         success &= self._decrypt_step()
         success &= self._structure_step()
+        success &= self._period_summary_step()
         success &= self._report_step()
 
         self._write_summary(start_time=start_time, success=success)
         return success
 
     def _download_step(self, days: Optional[int], all_data: bool) -> bool:
-        print("\n📥 Step 1/4 – Downloading from Qualtrics...")
+        print("\n📥 Step 1/5 – Downloading from Qualtrics...")
         cmd = [
             sys.executable,
             str(self.tools_dir["qualtrics"] / "download_qualtrics_data.py"),
@@ -258,7 +262,7 @@ class PipelineRunner:
         return success and self._run_command("buffered", buffered_cmd)
 
     def _decrypt_step(self) -> bool:
-        print("\n🔓 Step 2/4 – Decrypting survey payloads...")
+        print("\n🔓 Step 2/5 – Decrypting survey payloads...")
         cmd = [
             sys.executable,
             str(self.tools_dir["decryption"] / "automated_decryption_pipeline.py"),
@@ -273,7 +277,7 @@ class PipelineRunner:
         return self._run_command("decrypt", cmd)
 
     def _structure_step(self) -> bool:
-        print("\n📊 Step 3/4 – Structuring CSV outputs...")
+        print("\n📊 Step 3/5 – Structuring CSV outputs...")
         cmd = [
             sys.executable,
             str(self.tools_dir["structure"] / "generate_survey_csvs.py"),
@@ -287,8 +291,23 @@ class PipelineRunner:
 
         return self._run_command("structure", cmd)
 
+    def _period_summary_step(self) -> bool:
+        print("\n📆 Step 4/5 – Evaluating biweekly participation...")
+        cmd = [
+            sys.executable,
+            str(self.tools_dir["structure"] / "calculate_biweekly_periods.py"),
+            "--input",
+            str(self.run_dirs["structured"]),
+            "--output",
+            str(self.run_dirs["structured"]),
+            "--latest-output",
+            str(self.output_dirs["structured"] / "biweekly_period_summary_latest.csv"),
+        ]
+
+        return self._run_command("periods", cmd)
+
     def _report_step(self) -> bool:
-        print("\n🗺️ Step 4/4 – Building participant reports...")
+        print("\n🗺️ Step 5/5 – Building participant reports...")
         cmd = [
             sys.executable,
             str(self.tools_dir["structure"] / "generate_participant_reports.py"),
