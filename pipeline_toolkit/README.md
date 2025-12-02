@@ -4,7 +4,7 @@ This folder bundles everything a colleague needs to run the Gauteng Wellbeing Ma
 
 ## Contents
 
-- `pipeline_runner.py` – Orchestrates the download → decrypt → structure → report workflow.
+- `pipeline_runner.py` – Orchestrates the download → decrypt → structure → summary → report workflow.
 - `requirements.txt` – Minimal dependency list used by the launcher.
 - `.env.example` – Template for secrets. Copy to `.env` and populate values.
 - `secrets/` – Drop `private_key.pem` here (ignored by git).
@@ -39,6 +39,16 @@ consent date) contain at least one qualifying submission. The script also keeps
 an always-up-to-date copy at `data/structured/biweekly_period_summary_latest.csv`
 for quick reference between runs.
 
+### Monthly participation summary
+
+Immediately after the biweekly view, the runner now calls
+`calculate_monthly_participation.py`. The script tallies how many qualifying
+survey responses (initial + biweekly) each participant submitted during every
+calendar month (using `YYYY-MM` columns). Expect both CSV + Markdown outputs
+(`monthly_participation_summary.*`) inside the run folder plus a refreshed
+`data/structured/monthly_participation_summary_latest.csv` snapshot that always
+reflects the newest pipeline execution.
+
 ### Optional: ingest buffered S3 payloads
 
 If the fallback proxy has stored encrypted submissions in S3, the pipeline can
@@ -65,5 +75,6 @@ Every pipeline execution is stored separately to avoid clobbering earlier runs:
 - `data/structured/<run-timestamp>/`
 - `data/reports/<run-timestamp>/`
 - `data/structured/biweekly_period_summary_latest.csv`
+- `data/structured/monthly_participation_summary_latest.csv`
 
 The toolkit also maintains a `latest/` symlink (or a `LATEST_RUN.txt` pointer on systems without symlink support) inside each folder so collaborators can always find the most recent results quickly.
